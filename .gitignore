@@ -67,3 +67,4 @@ oracle/sqlnet.ora
 
 # Claude
 .claude/
+package/dist/
