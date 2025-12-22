@@ -1,0 +1,237 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: n8n-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: n8n
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - n8n-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n -d n8n"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: n8n-redis
+    restart: unless-stopped
+    command: >
+      sh -c "redis-server
+      --requirepass $$REDIS_PASSWORD
+      --appendonly yes"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - n8n-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: n8n-waha
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      WAHA_WEBHOOK_URL: ${WAHA_WEBHOOK_URL:-}
+      WAHA_PRINT_QR: ${WAHA_PRINT_QR:-true}
+      WAHA_LOG_LEVEL: ${WAHA_LOG_LEVEL:-info}
+      WAHA_API_KEY: ${WAHA_API_KEY:-}
+      WAHA_SWAGGER_ENABLED: ${WAHA_SWAGGER_ENABLED:-true}
+      WAHA_SWAGGER_USERNAME: ${WAHA_SWAGGER_USERNAME:-admin}
+      WAHA_SWAGGER_PASSWORD: ${WAHA_SWAGGER_PASSWORD:-admin}
+    volumes:
+      - waha_data:/app/.sessions
+    networks:
+      - n8n-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/api/ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  task-runner:
+    image: n8nio/runners:latest
+    container_name: n8n-task-runner
+    restart: unless-stopped
+    environment:
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_GRANT_TOKEN:-changeme}
+      N8N_RUNNERS_TASK_BROKER_URI: http://n8n-main:5679
+      N8N_RUNNERS_MAX_PAYLOAD: ${N8N_RUNNERS_MAX_PAYLOAD:-1073741824}
+      N8N_RUNNERS_MAX_CONCURRENCY: ${N8N_RUNNERS_MAX_CONCURRENCY:-5}
+      N8N_RUNNERS_TASK_TIMEOUT: ${N8N_RUNNERS_TASK_TIMEOUT:-60}
+      N8N_RUNNERS_HEARTBEAT_INTERVAL: ${N8N_RUNNERS_HEARTBEAT_INTERVAL:-30}
+      N8N_RUNNERS_STDLIB_ALLOW: ${N8N_RUNNERS_STDLIB_ALLOW:-*}
+      N8N_RUNNERS_EXTERNAL_ALLOW: ${N8N_RUNNERS_EXTERNAL_ALLOW:-}
+      N8N_RUNNERS_BUILTINS_DENY: ${N8N_RUNNERS_BUILTINS_DENY:-}
+    networks:
+      - n8n-network
+    depends_on:
+      n8n-main:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'node' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  postgres-backup:
+    image: postgres:15
+    container_name: n8n-postgres-backup
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: n8n
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+      BACKUP_DIR: /backups
+    volumes:
+      - postgres_backups:/backups
+      - ./scripts/backup.sh:/scripts/backup.sh:ro
+      - ./scripts/cleanup-old-backups.sh:/scripts/cleanup-old-backups.sh:ro
+    networks:
+      - n8n-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    command: >
+      -c "
+      apt-get update && apt-get install -y cron &&
+      echo '${BACKUP_SCHEDULE:-0 2 * * *} /scripts/backup.sh >> /var/log/backup.log 2>&1' | crontab - &&
+      /scripts/backup.sh &&
+      cron -f
+      "
+
+  n8n-main:
+    build:
+      context: .
+      args:
+        N8N_VERSION: ${N8N_VERSION:-2.0.3}
+        ORACLE_IC_SHA256: ${ORACLE_IC_SHA256}
+    image: n8n-custom:${N8N_VERSION:-2.0.3}
+    container_name: n8n-main
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+      - "5679:5679"
+    environment:
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:5678/}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      TZ: ${TZ:-America/Sao_Paulo}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-America/Sao_Paulo}
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: n8n
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      EXECUTIONS_MODE: queue
+      QUEUE_BULL_REDIS_HOST: redis
+      QUEUE_BULL_REDIS_PORT: 6379
+      QUEUE_BULL_REDIS_DB: 0
+      QUEUE_BULL_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      N8N_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
+      N8N_LOG_OUTPUT: ${N8N_LOG_OUTPUT:-console}
+      N8N_RUNNERS_ENABLED: true
+      N8N_RUNNERS_MODE: external
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_GRANT_TOKEN:-changeme}
+      N8N_RUNNERS_TASK_BROKER_URI: tcp://0.0.0.0:5679
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - n8n-network
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:5678/', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  n8n-worker:
+    image: n8n-custom:${N8N_VERSION:-2.0.3}
+    container_name: n8n-worker
+    restart: unless-stopped
+    command: ["n8n", "worker"]
+    environment:
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      TZ: ${TZ:-America/Sao_Paulo}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-America/Sao_Paulo}
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: n8n
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      EXECUTIONS_MODE: queue
+      QUEUE_BULL_REDIS_HOST: redis
+      QUEUE_BULL_REDIS_PORT: 6379
+      QUEUE_BULL_REDIS_DB: 0
+      QUEUE_BULL_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      N8N_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
+      N8N_LOG_OUTPUT: ${N8N_LOG_OUTPUT:-console}
+      N8N_RUNNERS_ENABLED: true
+      N8N_RUNNERS_MODE: external
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_GRANT_TOKEN:-changeme}
+      N8N_RUNNERS_TASK_BROKER_URI: tcp://n8n-main:5679
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      n8n-main:
+        condition: service_healthy
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - n8n-network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'n8n worker' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  n8n_data:
+    name: n8n-server_n8n_data
+  postgres_data:
+    name: n8n-server_postgres_data
+  redis_data:
+    name: n8n-server_redis_data
+  postgres_backups:
+    name: n8n-server_postgres_backups
+  waha_data:
+    name: n8n-server_waha_data
+
+networks:
+  n8n-network:
+    name: n8n-network
+    driver: bridge

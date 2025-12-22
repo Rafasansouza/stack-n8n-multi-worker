@@ -1,0 +1,69 @@
+# Ambiente
+.env
+.env.local
+.env.*.local
+
+# Dados sensíveis
+*.pem
+*.key
+*.cert
+*.crt
+
+# Backups
+backups/
+*.sql
+*.sql.gz
+*.dump
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# n8n data (se local)
+n8n_data/
+.n8n/
+
+# Dados PostgreSQL (se local)
+postgres_data/
+pgdata/
+
+# Dados Redis (se local)
+redis_data/
+
+# Temporários
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Oracle config (pode conter senhas)
+oracle/tnsnames.ora
+oracle/sqlnet.ora
+
+# Claude
+.claude/
