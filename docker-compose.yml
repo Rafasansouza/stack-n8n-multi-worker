@@ -53,6 +53,8 @@ services:
       WAHA_PRINT_QR: ${WAHA_PRINT_QR:-true}
       WAHA_LOG_LEVEL: ${WAHA_LOG_LEVEL:-info}
       WAHA_API_KEY: ${WAHA_API_KEY:-}
+      WAHA_DASHBOARD_USERNAME: ${WAHA_DASHBOARD_USERNAME:-admin}
+      WAHA_DASHBOARD_PASSWORD: ${WAHA_DASHBOARD_PASSWORD:-admin}
       WAHA_SWAGGER_ENABLED: ${WAHA_SWAGGER_ENABLED:-true}
       WAHA_SWAGGER_USERNAME: ${WAHA_SWAGGER_USERNAME:-admin}
       WAHA_SWAGGER_PASSWORD: ${WAHA_SWAGGER_PASSWORD:-admin}
@@ -158,7 +160,8 @@ services:
       N8N_RUNNERS_ENABLED: true
       N8N_RUNNERS_MODE: external
       N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_GRANT_TOKEN:-changeme}
-      N8N_RUNNERS_TASK_BROKER_URI: tcp://0.0.0.0:5679
+      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: 0.0.0.0
+      N8N_RUNNERS_BROKER_PORT: 5679
     depends_on:
       postgres:
         condition: service_healthy
@@ -200,7 +203,6 @@ services:
       N8N_RUNNERS_ENABLED: true
       N8N_RUNNERS_MODE: external
       N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_GRANT_TOKEN:-changeme}
-      N8N_RUNNERS_TASK_BROKER_URI: tcp://n8n-main:5679
     depends_on:
       postgres:
         condition: service_healthy

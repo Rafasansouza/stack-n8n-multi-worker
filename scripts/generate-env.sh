@@ -56,8 +56,10 @@ echo ""
 N8N_KEY=$(openssl rand -base64 32)
 POSTGRES_PASS=$(generate_password 24)
 REDIS_PASS=$(generate_password 24)
+RUNNERS_TOKEN=$(openssl rand -base64 32)
 WAHA_API_KEY=$(generate_password 32)
 WAHA_SWAGGER_PASS=$(generate_password 16)
+WAHA_DASHBOARD_PASS=$(generate_password 16)
 ORACLE_SHA="8d8c222d89be761c5e44baa9f6b688e11830f0a82e84b5b0f7e88ff58cff4b65"
 
 # Copiar .env.example e substituir valores
@@ -69,35 +71,42 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     sed -i '' "s|^N8N_ENCRYPTION_KEY=.*|N8N_ENCRYPTION_KEY=${N8N_KEY}|" "$ENV_FILE"
     sed -i '' "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${POSTGRES_PASS}|" "$ENV_FILE"
     sed -i '' "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASS}|" "$ENV_FILE"
+    sed -i '' "s|^N8N_RUNNERS_GRANT_TOKEN=.*|N8N_RUNNERS_GRANT_TOKEN=${RUNNERS_TOKEN}|" "$ENV_FILE"
     sed -i '' "s|^ORACLE_IC_SHA256=.*|ORACLE_IC_SHA256=${ORACLE_SHA}|" "$ENV_FILE"
     sed -i '' "s|^WAHA_API_KEY=.*|WAHA_API_KEY=${WAHA_API_KEY}|" "$ENV_FILE"
     sed -i '' "s|^WAHA_SWAGGER_PASSWORD=.*|WAHA_SWAGGER_PASSWORD=${WAHA_SWAGGER_PASS}|" "$ENV_FILE"
+    sed -i '' "s|^WAHA_DASHBOARD_PASSWORD=.*|WAHA_DASHBOARD_PASSWORD=${WAHA_DASHBOARD_PASS}|" "$ENV_FILE"
 else
     # Linux/Git Bash
     sed -i "s|^N8N_ENCRYPTION_KEY=.*|N8N_ENCRYPTION_KEY=${N8N_KEY}|" "$ENV_FILE"
     sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${POSTGRES_PASS}|" "$ENV_FILE"
     sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASS}|" "$ENV_FILE"
+    sed -i "s|^N8N_RUNNERS_GRANT_TOKEN=.*|N8N_RUNNERS_GRANT_TOKEN=${RUNNERS_TOKEN}|" "$ENV_FILE"
     sed -i "s|^ORACLE_IC_SHA256=.*|ORACLE_IC_SHA256=${ORACLE_SHA}|" "$ENV_FILE"
     sed -i "s|^WAHA_API_KEY=.*|WAHA_API_KEY=${WAHA_API_KEY}|" "$ENV_FILE"
     sed -i "s|^WAHA_SWAGGER_PASSWORD=.*|WAHA_SWAGGER_PASSWORD=${WAHA_SWAGGER_PASS}|" "$ENV_FILE"
+    sed -i "s|^WAHA_DASHBOARD_PASSWORD=.*|WAHA_DASHBOARD_PASSWORD=${WAHA_DASHBOARD_PASS}|" "$ENV_FILE"
 fi
 
 echo "✓ Arquivo .env criado com sucesso!"
 echo ""
 echo "Valores gerados:"
-echo "  - N8N_ENCRYPTION_KEY: ******** (${#N8N_KEY} caracteres)"
-echo "  - POSTGRES_PASSWORD:  ******** (${#POSTGRES_PASS} caracteres)"
-echo "  - REDIS_PASSWORD:     ******** (${#REDIS_PASS} caracteres)"
-echo "  - WAHA_API_KEY:       ******** (${#WAHA_API_KEY} caracteres)"
-echo "  - WAHA_SWAGGER_PASS:  ******** (${#WAHA_SWAGGER_PASS} caracteres)"
-echo "  - ORACLE_IC_SHA256:   ${ORACLE_SHA}"
+echo "  - N8N_ENCRYPTION_KEY:     ******** (${#N8N_KEY} caracteres)"
+echo "  - POSTGRES_PASSWORD:      ******** (${#POSTGRES_PASS} caracteres)"
+echo "  - REDIS_PASSWORD:         ******** (${#REDIS_PASS} caracteres)"
+echo "  - N8N_RUNNERS_GRANT_TOKEN: ******** (${#RUNNERS_TOKEN} caracteres)"
+echo "  - WAHA_API_KEY:           ******** (${#WAHA_API_KEY} caracteres)"
+echo "  - WAHA_SWAGGER_PASSWORD:  ******** (${#WAHA_SWAGGER_PASS} caracteres)"
+echo "  - WAHA_DASHBOARD_PASSWORD: ******** (${#WAHA_DASHBOARD_PASS} caracteres)"
+echo "  - ORACLE_IC_SHA256:       ${ORACLE_SHA}"
 echo ""
 echo "IMPORTANTE:"
-echo "  1. NUNCA commite o arquivo .env"
-echo "  2. Faça backup da N8N_ENCRYPTION_KEY"
+echo "  1. NUNCA commite o arquivo .env no Git"
+echo "  2. Faça backup da N8N_ENCRYPTION_KEY em local seguro"
 echo "  3. NÃO altere N8N_ENCRYPTION_KEY após criar workflows"
+echo "  4. Arquivo .env criado em: $ENV_FILE"
 echo ""
 echo "Próximos passos:"
-echo "  docker-compose build"
-echo "  docker-compose up -d"
+echo "  docker compose build"
+echo "  docker compose up -d"
 echo ""

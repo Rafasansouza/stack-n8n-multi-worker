@@ -20,10 +20,35 @@ RUN apt-get update \
     curl \
     libaio1 \
     libnsl2 \
-    python3 \
-    python3-pip \
-    python3-venv \
     unzip \
+    build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
+    wget \
+  && wget https://www.python.org/ftp/python/3.13.1/Python-3.13.1.tar.xz \
+  && tar -xf Python-3.13.1.tar.xz \
+  && cd Python-3.13.1 \
+  && ./configure --enable-optimizations --with-ensurepip=install \
+  && make -j$(nproc) \
+  && make altinstall \
+  && cd .. \
+  && rm -rf Python-3.13.1 Python-3.13.1.tar.xz \
+  && ln -sf /usr/local/bin/python3.13 /usr/local/bin/python3 \
+  && ln -sf /usr/local/bin/python3.13 /usr/local/bin/python \
+  && ln -sf /usr/local/bin/pip3.13 /usr/local/bin/pip3 \
+  && ln -sf /usr/local/bin/pip3.13 /usr/local/bin/pip \
+  && apt-get purge -y build-essential wget \
+  && apt-get autoremove -y \
   && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p ${ORACLE_IC_DIR} \
@@ -48,8 +73,9 @@ RUN npm install -g n8n@${N8N_VERSION} \
   && mkdir -p /home/node/.n8n \
   && chown -R node:node /home/node/.n8n
 
-# Python é necessário apenas para modo internal (não recomendado para produção)
-# Para modo external, use o container n8nio/runners separado
+# Python 3.13 instalado para compatibilidade com execução de código Python no n8n
+# NOTA: Este container usa modo external com n8nio/runners para execução segura de código
+# Python aqui é para casos específicos e debugging
 
 USER node
 
