@@ -552,10 +552,10 @@ Portas expostas:
 
 ---
 
-## instalar nodes
+## Instalar nodes:
 
-n8n-nodes-oracle-database-parameterization
+`n8n-nodes-oracle-database-parameterization`
 
-n8n-nodes-waha
+`n8n-nodes-waha`
 
 **Deploy concluído! Acesse:** `http://localhost:5678` ou `http://IP_SERVIDOR:5678`
