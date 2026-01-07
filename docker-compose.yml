@@ -62,6 +62,9 @@ services:
       WAHA_SWAGGER_ENABLED: ${WAHA_SWAGGER_ENABLED:-true}
       WAHA_SWAGGER_USERNAME: ${WAHA_SWAGGER_USERNAME:-admin}
       WAHA_SWAGGER_PASSWORD: ${WAHA_SWAGGER_PASSWORD:-admin}
+      WAHA_WEBHOOK_ACKNOWLEDGMENT: "true"
+      WAHA_WEBHOOK_RETRIES: "0"
+      WAHA_WEBHOOK_TIMEOUT: "10000"
     volumes:
       - waha_data:/app/.sessions
     networks:
