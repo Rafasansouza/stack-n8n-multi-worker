@@ -554,8 +554,10 @@ Portas expostas:
 
 ## Instalar nodes:
 
+### Node para oracle:
 `n8n-nodes-oracle-database-parameterization`
 
+### Node para Whatsapp:
 `n8n-nodes-waha`
 
 **Deploy concluído! Acesse:** `http://localhost:5678` ou `http://IP_SERVIDOR:5678`
