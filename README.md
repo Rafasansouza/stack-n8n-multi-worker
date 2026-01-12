@@ -251,10 +251,4 @@ Este projeto usa n8n 2.0.3 sob [Sustainable Use License](https://github.com/n8n-
 
 ---
 
-## 🤝 Contribuindo
-
-Para desenvolvimento com IA (Claude Code), consulte [docs/rules.md](docs/rules.md).
-
----
-
 **Desenvolvido com** ⚡ n8n + 🐘 PostgreSQL + 🔴 Redis + 🔮 Oracle + 🐍 Python 3.13
